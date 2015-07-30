@@ -4,14 +4,19 @@
 import sys, json, random, re
 
 # amount of nouns replaced
-REPLACEMENT = 0.3
+REPLACEMENT = 0.2
 # chance of choosing an unrelated topic word
 UNPREDICTABILITY = 0.2
+# chance of joining two sentences with a connective
+JOINABILITY = 0.4
+# connectives
+CONNECTIVES = ("and", "but", "so")
 
 def speechiterator(analysis):
     for speech in analysis:
         for paragraph in speech[1:-1]:
-            yield paragraph
+            for sentence in paragraph:
+                yield sentence
 
 # replace the nth occurence of needle in haystack
 def replace(haystack, needle, replacement, n):
@@ -22,6 +27,10 @@ def replace(haystack, needle, replacement, n):
         regex = r'^(.*?)\b%s\b' % escaped
     return re.sub(regex, r'\1%s' % replacement, haystack)
 
+# slice the sliceable into chunks of size size
+def chunks(sliceable, size):
+    return [sliceable[i:i + size] for i in range(0, len(sliceable), size)]
+
 # read analysis from stdin 
 analysis = json.load(sys.stdin)
 
@@ -29,22 +38,38 @@ analysis = json.load(sys.stdin)
 topics = sys.argv[1:-1]
 n = int(sys.argv[-1])
 
-# dictionary of 'topic: [paragraph, ]'
-paragraphs = dict(zip(topics, random.sample(list(speechiterator(analysis)), n * len(topics))[::n]))
+# random sample
+sample = dict(zip(topics, chunks(random.sample(list(speechiterator(analysis)), len(topics) * n), n)))
 
-for topic, paragraph in paragraphs.items():
-    for sentence in paragraph:
-        others = topics[:]
-        if len(others) > 1:
-            others.remove(topic)
-        nouns = [word[0] for word in sentence["summary"] if word[1][:2] == "NN"]
-        # choose which noun indexes to replace
-        indexes = random.sample(range(len(nouns)), len(nouns) and 1)
-        for i in indexes:
-            # which occurence of nouns[i] is this?
-            occurence = nouns[:i].count(nouns[i]) + 1
-            # which topic to use
-            replacement = random.choice(others) if random.random() < UNPREDICTABILITY else topic
-            sentence["sentence"] = replace(sentence["sentence"], nouns[i], replacement, occurence)
-        print(sentence["sentence"], end=". ")
+for topic, sentences in sample.items():
+    others = topics[:]
+    if len(others) > 1:
+        others.remove(topic)
+    connected = False
+    for sentence in sentences:
+        nouns = [word[0] for word in sentence["summary"] if word[1].startswith("NN")]
+        if len(nouns):
+            indexes = random.sample(range(len(nouns)), int(len(nouns) * REPLACEMENT + 0.5))
+            line = sentence["sentence"]
+            last = -2
+            for index in indexes:
+                if index - last <= 1:
+                    continue
+                occurence = nouns[:index].count(nouns[index]) + 1
+                replacement = random.choice(others) if random.random() < UNPREDICTABILITY else topic
+                line = replace(line, nouns[index], replacement, occurence)
+
+        else:
+            line = sentence["sentence"] + ". "
+
+        if random.random() < JOINABILITY:
+            # add a connective
+            line += " " + random.choice(CONNECTIVES) + ", "
+            connected = True
+        else:
+            line += ". "
+            connected = False
+
+        print(line, end="")
     print("\n")
+
