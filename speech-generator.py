@@ -41,7 +41,9 @@ n = int(sys.argv[-1])
 # random sample
 sample = dict(zip(topics, chunks(random.sample(list(speechiterator(analysis)), len(topics) * n), n)))
 
+outputs = []
 for topic, sentences in sample.items():
+    output = ""
     others = topics[:]
     if len(others) > 1:
         others.remove(topic)
@@ -70,6 +72,6 @@ for topic, sentences in sample.items():
             line += ". "
             connected = False
 
-        print(line, end="")
-    print("\n")
-
+        output += line
+    outputs.append(output)
+print(json.dumps(outputs))
