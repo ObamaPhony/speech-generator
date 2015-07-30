@@ -38,6 +38,7 @@ for topic, paragraph in paragraphs.items():
         if len(others) > 1:
             others.remove(topic)
         nouns = [word[0] for word in sentence["summary"] if word[1][:2] == "NN"]
+        # choose which noun indexes to replace
         indexes = random.sample(range(len(nouns)), int(len(nouns) * REPLACEMENT))
         for i in indexes:
             # which occurence of nouns[i] is this?
@@ -46,4 +47,4 @@ for topic, paragraph in paragraphs.items():
             replacement = random.choice(others) if random.random() < UNPREDICTABILITY else topic
             sentence["sentence"] = replace(sentence["sentence"], nouns[i], replacement, occurence)
         print(sentence["sentence"], end=". ")
-    print()
+    print("\n")
