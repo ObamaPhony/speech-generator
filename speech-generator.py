@@ -32,7 +32,9 @@ n = int(sys.argv[-1])
 # dictionary of 'topic: [paragraph, ]'
 paragraphs = dict(zip(topics, random.sample(list(speechiterator(analysis)), n * len(topics))[::n]))
 
+outputs = []
 for topic, paragraph in paragraphs.items():
+    output = ""
     for sentence in paragraph:
         others = topics[:]
         if len(others) > 1:
@@ -46,5 +48,6 @@ for topic, paragraph in paragraphs.items():
             # which topic to use
             replacement = random.choice(others) if random.random() < UNPREDICTABILITY else topic
             sentence["sentence"] = replace(sentence["sentence"], nouns[i], replacement, occurence)
-        print(sentence["sentence"], end=". ")
-    print("\n")
+        output += sentence["sentence"] + ". "
+    outputs.append(output)
+print(json.dumps(outputs))
