@@ -4,7 +4,7 @@
 import sys, json, random, re
 
 # amount of nouns replaced
-REPLACEMENT = 0.5
+REPLACEMENT = 0.3
 # chance of choosing an unrelated topic word
 UNPREDICTABILITY = 0.2
 
@@ -39,7 +39,7 @@ for topic, paragraph in paragraphs.items():
             others.remove(topic)
         nouns = [word[0] for word in sentence["summary"] if word[1][:2] == "NN"]
         # choose which noun indexes to replace
-        indexes = random.sample(range(len(nouns)), int(len(nouns) * REPLACEMENT))
+        indexes = random.sample(range(len(nouns)), len(nouns) and 1)
         for i in indexes:
             # which occurence of nouns[i] is this?
             occurence = nouns[:i].count(nouns[i]) + 1
